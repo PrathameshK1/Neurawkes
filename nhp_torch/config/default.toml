@@ -1,0 +1,62 @@
+[paths]
+raw_csv = "full_dataset_by_year_2014_2023_75_percent_float_casted_date_indexed.csv"
+artifacts_dir = "artifacts"
+
+[data]
+date_column = "Date YY-MM"
+missing_value = -1.0
+transform = "logdiff" # "logdiff" or "pct"
+
+# Only keep columns matching these substrings (case-insensitive). Empty list = keep all.
+# Priority order: fuel/energy first, then food.
+column_filter = [
+    "Fuel oil",
+    "Gasoline",
+    "Bacon",
+    "Chicken",
+    "Coffee",
+    "Eggs",
+    "Flour",
+    "Milk",
+    "Oranges",
+    "Rice",
+    "Tomatoes",
+    "Ground beef",
+    "Cookies",
+    "Ground chuck",
+    "Steak",
+    "Chuck roast",
+    "Lemons",
+]
+
+[events]
+threshold_z = 2.0
+mark = "abs_z" # "abs_z" or "raw"
+epsilon_time = 1e-3 # to break ties for multiple events within same month
+
+[splits]
+train_start = "2014-01"
+train_end = "2020-12"
+val_start = "2021-01"
+val_end = "2021-12"
+test_start = "2022-01"
+test_end = "2023-12"
+
+[model]
+embed_dim = 32
+hidden_dim = 64
+use_marks = true
+
+[train]
+seed = 7
+epochs = 300
+lr = 1e-3
+weight_decay = 1e-4
+patience = 30
+mc_samples_per_interval = 8
+batch_size = 1 # single global timeline (sequence)
+
+[eval]
+horizons_months = [1, 3]
+
+
