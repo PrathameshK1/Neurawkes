@@ -8,25 +8,24 @@ missing_value = -1.0
 transform = "logdiff" # "logdiff" or "pct"
 
 # Only keep columns matching these substrings (case-insensitive). Empty list = keep all.
-# Priority order: fuel/energy first, then food.
+# Priority order: fuel/energy first, then financial products (Treasury/interest rates).
 column_filter = [
+    # Fuel / Energy
     "Fuel oil",
     "Gasoline",
-    "Bacon",
-    "Chicken",
-    "Coffee",
-    "Eggs",
-    "Flour",
-    "Milk",
-    "Oranges",
-    "Rice",
-    "Tomatoes",
-    "Ground beef",
-    "Cookies",
-    "Ground chuck",
-    "Steak",
-    "Chuck roast",
-    "Lemons",
+    # Financial Products - Treasury Interest Rates
+    "Treasury Bills:Marketable avg interest rate",
+    "Treasury Bonds:Marketable avg interest rate",
+    "Treasury Notes:Marketable avg interest rate",
+    "Treasury Floating Rate Notes (FRN):Marketable avg interest rate",
+    "Treasury Inflation-Protected Securities (TIPS):Marketable avg interest rate",
+    "Total Marketable:Marketable avg interest rate",
+    "Total Interest-bearing Debt:Interest-bearing Debt avg interest rate",
+    "United States Savings Securities:Non-marketable avg interest rate",
+    "United States Savings Inflation Securities:Non-marketable avg interest rate",
+    "Government Account Series:Non-marketable avg interest rate",
+    "State and Local Government Series:Non-marketable avg interest rate",
+    "Total Non-marketable:Non-marketable avg interest rate",
 ]
 
 [events]

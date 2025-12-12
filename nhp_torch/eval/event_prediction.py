@@ -214,8 +214,13 @@ def _choose_threshold_on_val_1d(scores: np.ndarray, labels: np.ndarray) -> float
     if scores.size == 0:
         return None
     y = labels.astype(np.int32)
+    # If all labels are the same, use median of scores as fallback threshold
     if y.min() == y.max():
-        return None
+        # All positive: use low threshold to predict all positive (matching label)
+        if y.min() == 1:
+            return float(np.percentile(scores.astype(np.float64), 5))
+        # All negative: use high threshold to predict all negative (matching label)
+        return float(np.percentile(scores.astype(np.float64), 95))
     cand = np.unique(np.quantile(scores.astype(np.float64), np.linspace(0.01, 0.99, 80)))
     best_t = None
     best_f1 = -1.0
