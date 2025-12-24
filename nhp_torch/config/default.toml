@@ -8,24 +8,49 @@ missing_value = -1.0
 transform = "logdiff" # "logdiff" or "pct"
 
 # Only keep columns matching these substrings (case-insensitive). Empty list = keep all.
-# Priority order: fuel/energy first, then financial products (Treasury/interest rates).
+# Expanded feature set to improve fuel/energy shock prediction via cross-excitation.
+# Includes: (1) Target fuel/energy, (2) Leading interest rate indicators, (3) Transport-sensitive food commodities.
 column_filter = [
-    # Fuel / Energy
-    "Fuel oil",
-    "Gasoline",
-    # Financial Products - Treasury Interest Rates
-    "Treasury Bills:Marketable avg interest rate",
-    "Treasury Bonds:Marketable avg interest rate",
-    "Treasury Notes:Marketable avg interest rate",
+    # === TARGET: Fuel / Energy (what we want to predict) ===
+    "Fuel oil #2 per gallon USD",
+    "Gasoline, all types, per gallon USD",
+    "Gasoline, unleaded regular, per gallon USD",
+    
+    # === LEADING INDICATORS: Interest Rates ===
+    # Government Account Series shows +0.21 lagged correlation with fuel
+    "Government Account Series:Non-marketable avg interest rate",
+    # Treasury FRN shows +0.19 lagged correlation
     "Treasury Floating Rate Notes (FRN):Marketable avg interest rate",
+    # Total Non-marketable shows +0.20 lagged correlation
+    "Total Non-marketable:Non-marketable avg interest rate",
+    # Treasury Bills shows +0.20 contemporaneous correlation
+    "Treasury Bills:Marketable avg interest rate",
+    # TIPS shows -0.16 lagged (inverse signal)
     "Treasury Inflation-Protected Securities (TIPS):Marketable avg interest rate",
+    # Treasury Notes shows -0.17 lagged (inverse signal)
+    "Treasury Notes:Marketable avg interest rate",
+    # Other interest rate columns for completeness
+    "Treasury Bonds:Marketable avg interest rate",
     "Total Marketable:Marketable avg interest rate",
     "Total Interest-bearing Debt:Interest-bearing Debt avg interest rate",
     "United States Savings Securities:Non-marketable avg interest rate",
-    "United States Savings Inflation Securities:Non-marketable avg interest rate",
-    "Government Account Series:Non-marketable avg interest rate",
     "State and Local Government Series:Non-marketable avg interest rate",
-    "Total Non-marketable:Non-marketable avg interest rate",
+    
+    # === LEADING INDICATORS: Transport-Sensitive Food Commodities ===
+    # These commodities have high transport costs and show lagged correlations with fuel
+    # Bacon: +0.15 lagged, +0.22 contemporaneous
+    "Bacon, sliced, per lb. USD",
+    # Chicken breast: +0.18 lagged correlation
+    "Chicken breast, boneless, per lb. (453.6 gm) in U.S. city average, average price, not seasonally adjusted",
+    # Lemons: +0.17 lagged, +0.19 contemporaneous
+    "Lemons, per lb. (453.6 gm) in U.S. city average, average price, not seasonally adjusted",
+    # Oranges: +0.27 contemporaneous (high transport sensitivity)
+    "Oranges, navel, per lb. USD",
+    # Steak: +0.21 contemporaneous (beef supply chain)
+    "Steak, sirloin, USDA Choice, boneless, per lb. (453.6 gm) in U.S. city average, average price, not seasonally adjusted",
+    # Ground beef variants (supply chain indicators)
+    "Ground beef, 100% beef, per lb. (453.6 gm) in U.S. city average, average price, not seasonally adjusted",
+    "Ground beef, lean and extra lean, per lb. (453.6 gm) in U.S. city average, average price, not seasonally adjusted",
 ]
 
 [events]
