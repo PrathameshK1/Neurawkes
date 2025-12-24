@@ -10,6 +10,20 @@
 
 ---
 
+## 🎯 TL;DR — The Simple Version
+
+**What we did**: We built a neural network that predicts when fuel and gas prices will spike.
+
+**The problem**: Energy prices are hard to predict because they're driven by random world events (wars, OPEC decisions, hurricanes).
+
+**Our solution**: We discovered that **food prices can predict fuel prices**. Why? Because trucking companies and logistics providers already know when fuel costs are going up—they raise prices on meat, eggs, and citrus (stuff that needs refrigerated trucks) *before* the gas station prices change.
+
+**The result**: By watching bacon, chicken, and orange prices, our model went from **10% accuracy to 36% accuracy** at predicting fuel price shocks 3 months ahead. That's a **260% improvement**.
+
+**Bottom line**: Supply chains are like a crystal ball—they price in future fuel costs before the rest of the market catches on. 🔮
+
+---
+
 ## Abstract
 
 This research presents a novel application of **Neural Hawkes Processes (NHP)** to macroeconomic event prediction, specifically targeting significant shocks in U.S. Treasury interest rates and energy commodity prices. We reformulate the problem of predicting macroeconomic regime changes as a **multivariate marked temporal point process**, where discrete "events" represent statistically significant deviations from historical norms.
@@ -225,7 +239,7 @@ All predictions use **only historical information**:
 
 | Attribute | Value |
 |-----------|-------|
-| Source | U.S. Macroeconomic Monthly Series (2014–2023) |
+| Source | [Kaggle: US Commodities Price and Interest Rates](https://www.kaggle.com/datasets/excafoxxeharst/us-commodities-price-and-interest-rates) |
 | Instruments | 21 (3 fuel/energy + 11 Treasury rates + 7 food commodities) |
 | Event Types | 42 (UP/DOWN for each instrument) |
 | Total Events | 225 |
@@ -495,7 +509,7 @@ neural_hawkes/
 │   ├── checkpoints/                   # Model weights
 │   └── eval_tearsheet/                # Evaluation report
 ├── neurawkes/                         # Legacy Theano code
-└── full_dataset_*.csv                 # Raw data
+└── data/                              # Download from Kaggle (see below)
 ```
 
 ---
@@ -507,6 +521,12 @@ neural_hawkes/
 ```bash
 pip install torch numpy pandas matplotlib tqdm toml
 ```
+
+### Data Download
+
+1. Download the dataset from Kaggle: [US Commodities Price and Interest Rates](https://www.kaggle.com/datasets/excafoxxeharst/us-commodities-price-and-interest-rates)
+2. Place the CSV file in the project root directory
+3. Rename it to `full_dataset_by_year_2014_2023_75_percent_float_casted_date_indexed.csv` (or update the path in `nhp_torch/config/default.toml`)
 
 ### Quick Start
 
