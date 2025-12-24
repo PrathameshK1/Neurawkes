@@ -44,48 +44,70 @@ Prior work focuses predominantly on high-frequency data (millisecond to daily). 
 
 ## 3. Methodology
 
-### 3.1 Formal Problem Definition
+### 3.1 Problem Definition
 
-Let \(\{(t_i, k_i, m_i)\}_{i=1}^{N}\) denote a sequence of events where:
-- \(t_i \in \mathbb{R}^+\): Event timestamp (continuous time, measured in months)
-- \(k_i \in \{1, \ldots, K\}\): Event type (instrument × direction)
-- \(m_i \in \mathbb{R}^+\): Mark (shock magnitude)
+We model the market as a sequence of discrete shock events. Each event is described by three components:
 
-The **conditional intensity function** \(\lambda_k(t | \mathcal{H}_t)\) specifies the instantaneous probability of a type-\(k\) event at time \(t\), given the history \(\mathcal{H}_t = \{(t_j, k_j, m_j) : t_j < t\}\):
+| Component | Symbol | Description |
+|-----------|--------|-------------|
+| **Timestamp** | `t` | When the event occurred (continuous time, in months) |
+| **Event Type** | `k` | Which instrument was affected and direction (e.g., "Fuel Oil UP") |
+| **Mark** | `m` | Magnitude of the shock (how severe) |
 
-$$P(\text{event of type } k \text{ in } [t, t+dt) | \mathcal{H}_t) = \lambda_k(t) \, dt$$
+The model learns the **intensity function** `λ(t)` — the instantaneous probability of each event type occurring at any given time, based on what has happened before.
 
 ### 3.2 Neural Hawkes Architecture
 
-Following Mei & Eisner (2017), we parameterize the intensity using a **Continuous-Time LSTM** (CT-LSTM):
+We use a **Continuous-Time LSTM** (CT-LSTM) that evolves its hidden state between events:
 
-**Between events** (\(t \in (t_{i-1}, t_i)\)):
-$$\mathbf{c}(t) = \bar{\mathbf{c}}_i + (\mathbf{c}_{i-1} - \bar{\mathbf{c}}_i) \cdot \exp(-\boldsymbol{\delta}_i \cdot (t - t_{i-1}))$$
-$$\mathbf{h}(t) = \mathbf{o}_i \odot \tanh(\mathbf{c}(t))$$
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    NEURAL HAWKES PROCESS                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   Event Sequence:  (t₁, k₁, m₁) → (t₂, k₂, m₂) → ...       │
+│                          ↓                                   │
+│   Embedding Layer:  Event type → 32-dim vector              │
+│                          ↓                                   │
+│   CT-LSTM Cell:     Hidden state h(t) evolves continuously  │
+│                     • Decays exponentially between events   │
+│                     • Updates discretely at each event      │
+│                          ↓                                   │
+│   Intensity Head:   h(t) → softplus → λ(t) for each type   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
 
-**At events** (\(t = t_i\)):
-Standard LSTM update incorporating event embedding \(\mathbf{e}_{k_i}\) and mark \(m_i\).
-
-**Intensity computation**:
-$$\lambda_k(t) = \text{softplus}(\mathbf{w}_k^\top \mathbf{h}(t) + b_k)$$
+**Key insight**: Between events, the model's memory of past shocks decays over time (exponential decay). When a new shock occurs, the hidden state is updated based on the shock type and magnitude.
 
 ### 3.3 Event Extraction Pipeline
 
-**Step 1: Log-Return Transformation**
+We convert raw price data into discrete events through a three-step process:
 
-Raw prices \(P_t\) are transformed to log-returns for stationarity:
-$$r_t = \log(P_t) - \log(P_{t-1})$$
+**Step 1: Compute Log-Returns**
 
-**Step 2: Z-Score Normalization (Training Statistics Only)**
+```
+return(t) = log(Price(t)) - log(Price(t-1))
+```
 
-To prevent information leakage, standardization uses only training period statistics:
-$$z_t = \frac{r_t - \hat{\mu}_{\text{train}}}{\hat{\sigma}_{\text{train}}}$$
+This measures percentage changes and makes the series stationary.
 
-**Step 3: Threshold-Based Event Definition**
+**Step 2: Standardize Using Training Data Only**
 
-Events are defined as exceedances of threshold \(\tau = 2.0\) (approximately 2.3% tail probability under normality):
-- **UP event**: \(z_t \geq \tau\)
-- **DOWN event**: \(z_t \leq -\tau\)
+```
+z_score(t) = (return(t) - mean_train) / std_train
+```
+
+We use *only* 2014-2020 statistics to avoid information leakage.
+
+**Step 3: Define Events via Thresholding**
+
+```
+IF z_score ≥ +2.0  →  "UP" event (significant price increase)
+IF z_score ≤ -2.0  →  "DOWN" event (significant price decrease)
+```
+
+The threshold of ±2.0 captures approximately the top/bottom 2.3% of movements.
 
 ### 3.4 Cross-Excitation Feature Engineering
 
@@ -105,12 +127,20 @@ A key methodological contribution is the systematic identification of **leading 
 
 ### 3.5 Training Procedure
 
-**Objective**: Maximum likelihood estimation
-$$\mathcal{L}(\theta) = \sum_{i=1}^{N} \log \lambda_{k_i}(t_i) - \int_0^T \sum_{k=1}^{K} \lambda_k(t) \, dt$$
+**Objective**: We train the model to maximize the likelihood of observing the actual event sequence. Intuitively, the model should:
+1. Assign high intensity to times when events *did* occur
+2. Assign low intensity to times when events *did not* occur
 
-**Integral Approximation**: Monte Carlo sampling with 8 points per inter-event interval.
+**Training Details**:
 
-**Optimization**: Adam optimizer, learning rate \(10^{-3}\), weight decay \(10^{-4}\), early stopping with patience 30 epochs.
+| Parameter | Value | Purpose |
+|-----------|-------|---------|
+| Optimizer | Adam | Adaptive learning rates |
+| Learning Rate | 0.001 | Step size for updates |
+| Weight Decay | 0.0001 | L2 regularization |
+| Max Epochs | 300 | Training iterations |
+| Early Stopping | 30 epochs | Stop if no improvement |
+| MC Samples | 8 per interval | Approximate integral computation |
 
 ---
 
